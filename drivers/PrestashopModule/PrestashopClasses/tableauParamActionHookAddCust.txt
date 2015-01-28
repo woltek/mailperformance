@@ -1,0 +1,719 @@
+﻿<?php
+ array
+(
+    [_POST] => Array
+        (
+            [id_gender] => 1
+            [customer_firstname] => zeg
+            [customer_lastname] => zegzge
+            [email] => lucas+1@zientek.fr
+            [passwd] => 123456
+            [days] => 11
+            [months] => 10
+            [years] => 1984
+            [newsletter] => 1
+            [email_create] => 1
+            [is_new_customer] => 1
+            [back] => my-account
+            [submitAccount] => 
+            [lastname] => zegzge
+            [firstname] => zeg
+        )
+
+    [newCustomer] => Customer Object
+        (
+            [id] => 10
+            [id_shop] => 1
+            [id_shop_group] => 1
+            [secure_key] => 851a947d80fa7b019579418cb1206ce9
+            [note] => 
+            [id_gender] => 1
+            [id_default_group] => 3
+            [id_lang] => 1
+            [lastname] => zegzge
+            [firstname] => Zeg
+            [birthday] => 1984-10-11
+            [email] => lucas+1@zientek.fr
+            [newsletter] => 1
+            [ip_registration_newsletter] => 10.234.10.41
+            [newsletter_date_add] => 2014-07-22 15:45:00
+            [optin] => 
+            [website] => 
+            [company] => 
+            [siret] => 
+            [ape] => 
+            [outstanding_allow_amount] => 0
+            [show_public_prices] => 0
+            [id_risk] => 
+            [max_payment_days] => 0
+            [passwd] => 91728b223e5f431b87b5eb25c9d5bad2
+            [last_passwd_gen] => 2014-07-22 09:45:00
+            [active] => 1
+            [is_guest] => 
+            [deleted] => 0
+            [date_add] => 2014-07-22 15:45:00
+            [date_upd] => 2014-07-22 15:45:00
+            [years] => 
+            [days] => 
+            [months] => 
+            [geoloc_id_country] => 
+            [geoloc_id_state] => 
+            [geoloc_postcode] => 
+            [logged] => 1
+            [id_guest] => 
+            [groupBox] => 
+            [webserviceParameters:protected] => Array
+                (
+                    [fields] => Array
+                        (
+                            [id_default_group] => Array
+                                (
+                                    [xlink_resource] => groups
+                                )
+
+                            [id_lang] => Array
+                                (
+                                    [xlink_resource] => languages
+                                )
+
+                            [newsletter_date_add] => Array
+                                (
+                                )
+
+                            [ip_registration_newsletter] => Array
+                                (
+                                )
+
+                            [last_passwd_gen] => Array
+                                (
+                                    [setter] => 
+                                )
+
+                            [secure_key] => Array
+                                (
+                                    [setter] => 
+                                )
+
+                            [deleted] => Array
+                                (
+                                )
+
+                            [passwd] => Array
+                                (
+                                    [setter] => setWsPasswd
+                                )
+
+                        )
+
+                    [associations] => Array
+                        (
+                            [groups] => Array
+                                (
+                                    [resource] => group
+                                )
+
+                        )
+
+                )
+
+            [id_shop_list] => 
+            [get_shop_from_context:protected] => 1
+            [table:protected] => customer
+            [identifier:protected] => id_customer
+            [fieldsRequired:protected] => Array
+                (
+                    [0] => lastname
+                    [1] => firstname
+                    [2] => email
+                    [3] => passwd
+                )
+
+            [fieldsSize:protected] => Array
+                (
+                    [lastname] => 32
+                    [firstname] => 32
+                    [email] => 128
+                    [passwd] => 32
+                    [note] => 65000
+                )
+
+            [fieldsValidate:protected] => Array
+                (
+                    [secure_key] => isMd5
+                    [lastname] => isName
+                    [firstname] => isName
+                    [email] => isEmail
+                    [passwd] => isPasswd
+                    [id_gender] => isUnsignedId
+                    [birthday] => isBirthDate
+                    [newsletter] => isBool
+                    [optin] => isBool
+                    [website] => isUrl
+                    [company] => isGenericName
+                    [siret] => isSiret
+                    [ape] => isApe
+                    [outstanding_allow_amount] => isFloat
+                    [show_public_prices] => isBool
+                    [id_risk] => isUnsignedInt
+                    [max_payment_days] => isUnsignedInt
+                    [active] => isBool
+                    [deleted] => isBool
+                    [note] => isCleanHtml
+                    [is_guest] => isBool
+                    [id_shop] => isUnsignedId
+                    [id_shop_group] => isUnsignedId
+                    [id_lang] => isUnsignedId
+                    [date_add] => isDate
+                    [date_upd] => isDate
+                )
+
+            [fieldsRequiredLang:protected] => Array
+                (
+                )
+
+            [fieldsSizeLang:protected] => Array
+                (
+                )
+
+            [fieldsValidateLang:protected] => Array
+                (
+                )
+
+            [tables:protected] => Array
+                (
+                )
+
+            [image_dir:protected] => 
+            [image_format:protected] => jpg
+            [def:protected] => Array
+                (
+                    [table] => customer
+                    [primary] => id_customer
+                    [fields] => Array
+                        (
+                            [secure_key] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isMd5
+                                    [copy_post] => 
+                                )
+
+                            [lastname] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isName
+                                    [required] => 1
+                                    [size] => 32
+                                )
+
+                            [firstname] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isName
+                                    [required] => 1
+                                    [size] => 32
+                                )
+
+                            [email] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isEmail
+                                    [required] => 1
+                                    [size] => 128
+                                )
+
+                            [passwd] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isPasswd
+                                    [required] => 1
+                                    [size] => 32
+                                )
+
+                            [last_passwd_gen] => Array
+                                (
+                                    [type] => 3
+                                    [copy_post] => 
+                                )
+
+                            [id_gender] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                )
+
+                            [birthday] => Array
+                                (
+                                    [type] => 5
+                                    [validate] => isBirthDate
+                                )
+
+                            [newsletter] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                )
+
+                            [newsletter_date_add] => Array
+                                (
+                                    [type] => 5
+                                    [copy_post] => 
+                                )
+
+                            [ip_registration_newsletter] => Array
+                                (
+                                    [type] => 3
+                                    [copy_post] => 
+                                )
+
+                            [optin] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                )
+
+                            [website] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isUrl
+                                )
+
+                            [company] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isGenericName
+                                )
+
+                            [siret] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isSiret
+                                )
+
+                            [ape] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isApe
+                                )
+
+                            [outstanding_allow_amount] => Array
+                                (
+                                    [type] => 4
+                                    [validate] => isFloat
+                                    [copy_post] => 
+                                )
+
+                            [show_public_prices] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                    [copy_post] => 
+                                )
+
+                            [id_risk] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedInt
+                                    [copy_post] => 
+                                )
+
+                            [max_payment_days] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedInt
+                                    [copy_post] => 
+                                )
+
+                            [active] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                    [copy_post] => 
+                                )
+
+                            [deleted] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                    [copy_post] => 
+                                )
+
+                            [note] => Array
+                                (
+                                    [type] => 6
+                                    [validate] => isCleanHtml
+                                    [size] => 65000
+                                    [copy_post] => 
+                                )
+
+                            [is_guest] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                    [copy_post] => 
+                                )
+
+                            [id_shop] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                    [copy_post] => 
+                                )
+
+                            [id_shop_group] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                    [copy_post] => 
+                                )
+
+                            [id_default_group] => Array
+                                (
+                                    [type] => 1
+                                    [copy_post] => 
+                                )
+
+                            [id_lang] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                    [copy_post] => 
+                                )
+
+                            [date_add] => Array
+                                (
+                                    [type] => 5
+                                    [validate] => isDate
+                                    [copy_post] => 
+                                )
+
+                            [date_upd] => Array
+                                (
+                                    [type] => 5
+                                    [validate] => isDate
+                                    [copy_post] => 
+                                )
+
+                        )
+
+                    [classname] => Customer
+                )
+
+            [update_fields:protected] => 
+            [force_id] => 
+        )
+
+    [cookie] => Cookie Object
+        (
+            [_content:protected] => Array
+                (
+                    [date_add] => 2014-07-16 14:39:42
+                    [id_lang] => 1
+                    [id_currency] => 1
+                    [id_guest] => 12
+                    [id_connections] => 19
+                    [viewed] => 7
+                    [last_visited_category] => 4
+                    [checksum] => 279260933
+                    [id_customer] => 10
+                    [customer_lastname] => zegzge
+                    [customer_firstname] => Zeg
+                    [passwd] => 91728b223e5f431b87b5eb25c9d5bad2
+                    [logged] => 1
+                    [account_created] => 1
+                    [email] => lucas+1@zientek.fr
+                    [is_guest] => 
+                )
+
+            [_name:protected] => ee71a5687e53d260a86f630d713c16c7
+            [_expire:protected] => 1407764700
+            [_domain:protected] => 
+            [_path:protected] => /prestashop/prestashop/
+            [_modified:protected] => 1
+            [_allow_writing:protected] => 1
+            [_salt:protected] => cGSdTXZ6
+            [_standalone:protected] => 
+        )
+
+    [cart] => Cart Object
+        (
+            [id] => 
+            [id_shop_group] => 1
+            [id_shop] => 1
+            [id_address_delivery] => 0
+            [id_address_invoice] => 0
+            [id_currency] => 1
+            [id_customer] => 
+            [id_guest] => 12
+            [id_lang] => 1
+            [recyclable] => 0
+            [gift] => 0
+            [gift_message] => 
+            [mobile_theme] => 
+            [date_add] => 
+            [secure_key] => 851a947d80fa7b019579418cb1206ce9
+            [id_carrier] => 0
+            [date_upd] => 2014-07-22 15:45:01
+            [checkedTos] => 
+            [pictures] => 
+            [textFields] => 
+            [delivery_option] => 
+            [allow_seperated_package] => 
+            [_products:protected] => 
+            [_taxCalculationMethod:protected] => 0
+            [webserviceParameters:protected] => Array
+                (
+                    [fields] => Array
+                        (
+                            [id_address_delivery] => Array
+                                (
+                                    [xlink_resource] => addresses
+                                )
+
+                            [id_address_invoice] => Array
+                                (
+                                    [xlink_resource] => addresses
+                                )
+
+                            [id_currency] => Array
+                                (
+                                    [xlink_resource] => currencies
+                                )
+
+                            [id_customer] => Array
+                                (
+                                    [xlink_resource] => customers
+                                )
+
+                            [id_guest] => Array
+                                (
+                                    [xlink_resource] => guests
+                                )
+
+                            [id_lang] => Array
+                                (
+                                    [xlink_resource] => languages
+                                )
+
+                        )
+
+                    [associations] => Array
+                        (
+                            [cart_rows] => Array
+                                (
+                                    [resource] => cart_row
+                                    [virtual_entity] => 1
+                                    [fields] => Array
+                                        (
+                                            [id_product] => Array
+                                                (
+                                                    [required] => 1
+                                                    [xlink_resource] => products
+                                                )
+
+                                            [id_product_attribute] => Array
+                                                (
+                                                    [required] => 1
+                                                    [xlink_resource] => combinations
+                                                )
+
+                                            [id_address_delivery] => Array
+                                                (
+                                                    [required] => 1
+                                                    [xlink_resource] => addresses
+                                                )
+
+                                            [quantity] => Array
+                                                (
+                                                    [required] => 1
+                                                )
+
+                                        )
+
+                                )
+
+                        )
+
+                )
+
+            [id_shop_list] => 
+            [get_shop_from_context:protected] => 1
+            [table:protected] => cart
+            [identifier:protected] => id_cart
+            [fieldsRequired:protected] => Array
+                (
+                    [0] => id_currency
+                    [1] => id_lang
+                )
+
+            [fieldsSize:protected] => Array
+                (
+                    [secure_key] => 32
+                )
+
+            [fieldsValidate:protected] => Array
+                (
+                    [id_shop_group] => isUnsignedId
+                    [id_shop] => isUnsignedId
+                    [id_address_delivery] => isUnsignedId
+                    [id_address_invoice] => isUnsignedId
+                    [id_carrier] => isUnsignedId
+                    [id_currency] => isUnsignedId
+                    [id_customer] => isUnsignedId
+                    [id_guest] => isUnsignedId
+                    [id_lang] => isUnsignedId
+                    [recyclable] => isBool
+                    [gift] => isBool
+                    [gift_message] => isMessage
+                    [mobile_theme] => isBool
+                    [allow_seperated_package] => isBool
+                    [date_add] => isDateFormat
+                    [date_upd] => isDateFormat
+                )
+
+            [fieldsRequiredLang:protected] => Array
+                (
+                )
+
+            [fieldsSizeLang:protected] => Array
+                (
+                )
+
+            [fieldsValidateLang:protected] => Array
+                (
+                )
+
+            [tables:protected] => Array
+                (
+                )
+
+            [image_dir:protected] => 
+            [image_format:protected] => jpg
+            [def:protected] => Array
+                (
+                    [table] => cart
+                    [primary] => id_cart
+                    [fields] => Array
+                        (
+                            [id_shop_group] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                )
+
+                            [id_shop] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                )
+
+                            [id_address_delivery] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                )
+
+                            [id_address_invoice] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                )
+
+                            [id_carrier] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                )
+
+                            [id_currency] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                    [required] => 1
+                                )
+
+                            [id_customer] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                )
+
+                            [id_guest] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                )
+
+                            [id_lang] => Array
+                                (
+                                    [type] => 1
+                                    [validate] => isUnsignedId
+                                    [required] => 1
+                                )
+
+                            [recyclable] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                )
+
+                            [gift] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                )
+
+                            [gift_message] => Array
+                                (
+                                    [type] => 3
+                                    [validate] => isMessage
+                                )
+
+                            [mobile_theme] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                )
+
+                            [delivery_option] => Array
+                                (
+                                    [type] => 3
+                                )
+
+                            [secure_key] => Array
+                                (
+                                    [type] => 3
+                                    [size] => 32
+                                )
+
+                            [allow_seperated_package] => Array
+                                (
+                                    [type] => 2
+                                    [validate] => isBool
+                                )
+
+                            [date_add] => Array
+                                (
+                                    [type] => 5
+                                    [validate] => isDateFormat
+                                )
+
+                            [date_upd] => Array
+                                (
+                                    [type] => 5
+                                    [validate] => isDateFormat
+                                )
+
+                        )
+
+                    [classname] => Cart
+                )
+
+            [update_fields:protected] => 
+            [force_id] => 
+        )
+
+    [altern] => 3
+)
+
+END
