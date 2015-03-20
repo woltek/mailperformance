@@ -17,7 +17,7 @@ curl_setopt($req, CURLOPT_HTTPHEADER, array(
 //Execution de la requ�te
 $result = curl_exec($req);
 
-//On �crit le r�sultat dans la fen�tre
+//On ecrit le resultat dans la fenetre
 echo $result;
 
 curl_close($req);

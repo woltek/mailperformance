@@ -1,14 +1,14 @@
 <?php
 
 //Replace with your own html file
-$html = "<html> Bonjour test <a href='www.google.fr'>lien</a> </html>";
+$html = "<html> Bonjour test <a href='www.np6.fr'>lien</a> </html>";
 
 //The id of the message you want to send
 $actionGuid = "000ABC";
 
 //Set your link id (I had only one link, but you can set it in the foreach if you have more links)
 $linkId = "1";
-//Set the hashkey we provided you
+//Set the hashkey we provided you (to get your own key, please send an email to apiv8@np6.com)
 $hashKey = "01234";
 //Set your own customer id
 $customerId = "ABC";
