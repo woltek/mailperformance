@@ -17,16 +17,21 @@
 *  International Registered Trademark & Property of NP6 SAS
 *}
 
+{* Partialfield ,use to bind field *}
 <div class="row">
   <div style="width:400px;"><h3 style="text-align:center;">{l s='Prestashop Fields' mod='np6'} | {l s='MailPerformance Fields' mod='np6'}</h3></div>
 </div>
 
+{* if DBfield exist , foreach item of them *}
 {if $np6.DBfield }
 	{foreach name=field from=$np6.DBfield item=field}
 		<div class="row">
 			<div class="input-group col-md-6" >
+
+				{* Display field name *}
 				<span class="input-group-addon">{$field.name|escape}</span>
 			
+				{* Bind a field to the name *}
 				<select name="dbSelect{$field.dbName|escape}"  id="field{$smarty.foreach.field.index|escape}" class="fields" >
 					<option value="0" >{l s='Don\'t import' mod='np6'}</option>
 					{if isset($np6.APIFields)}
@@ -51,11 +56,15 @@
 				<div class="col-md-4 linkfield" id="linkfield{$smarty.foreach.field.index|escape}" >
 					{foreach from=$field.distinctValues item=name key=value}
                     <div class="input-group col-md-4" >
+
+                    	{* Display field name *}
                         <span class="input-group-addon">{$name|escape}</span>
 
+						{* Bind a field to the name *}
                         <select name="dbSelectLink{$field.dbName|escape}{$value|escape}"
-                                data-selectedoption="{if isset($np6.importSet) && isset($np6.importSet.fields.{$field.dbName}.binding ) }{$np6.importSet.fields.{$field.dbName}.binding.{$value}|escape}{/if}"></select>
-                    </div>
+                                data-selectedoption="{if isset($np6.importSet) && isset($np6.importSet.fields.{$field.dbName}) && isset($np6.importSet.fields.{$field.dbName}.binding)}{$np6.importSet.fields.{$field.dbName}.binding.{$value}|escape}{/if}">
+                       	 </select>
+                    	</div>
 					{/foreach}
 				</div>
 			{/if}
@@ -64,8 +73,11 @@
 			{if  in_array(6,$field.type)}
 				<div class="col-md-4 linkfield" id="dateFormatfield{$smarty.foreach.field.index|escape}" >
                     <div class="input-group col-md-4" >
+
+                    	{* Display field name *}
                         <span class="input-group-addon">{l s='Date format for export' mod='np6'}  :</span>
 
+						{* Bind a field to the name *}
                         <select name="dateFormat{$field.dbName|escape}">
 							{foreach from=$np6.DateFormat key=MPFormat item=PHPFormat}
 								<option value="{$PHPFormat|escape}" 

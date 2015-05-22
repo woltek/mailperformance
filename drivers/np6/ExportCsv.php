@@ -30,6 +30,7 @@ const DELIMITER = ';';
  */
 function execute()
 {
+
 	// write on the output stream no file is created
 	$output = fopen('php://output', 'w');
 	$mperf = new MailPerformance();
@@ -42,12 +43,14 @@ function execute()
 
 	// get all fields
 	$fields = $mperf->fields->getIndexedFields();
-
 	// if error we stop and show the error in the browser
 	if ($fields == null)
+	{
 		echo $mperf->fields->erreur;
+	}	
 	else
 	{
+
 		// add http header to download the file
 		header('Content-type: text/csv');
 		header('Content-Type: application/force-download; charset=UTF-8');
@@ -56,12 +59,14 @@ function execute()
 
 		// get the csv header from configuration files and the database field name
 		foreach ($import_bind['fields'] as $dbname => $field_binding)
+		{
 			// if we import values
 			if ($field_binding['apiFieldId'] != 0)
 			{
 				$column_header_name[] = $fields[$field_binding['apiFieldId']]->name;
 				$db_field_array[] = $dbname;
 			}
+		}
 
 		// add the csv header
 		fputcsv($output, $column_header_name, DELIMITER);
@@ -73,6 +78,7 @@ function execute()
 
 		$fieldsql = ltrim($fieldsql, ',');
 		$sql = 'SELECT '.$fieldsql.' FROM '._DB_PREFIX_.'customer';
+
 
 		// loop over the sql results, outputting them
 		if ($results = Db::getInstance()->ExecuteS($sql))

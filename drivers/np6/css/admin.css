@@ -20,25 +20,25 @@
 /*css page de configuration (admin)*/
 .mailPerf-container .input-group {
     margin: 10px;
-    width: 400px;
+    width: 420px;
     float: left !important;
 }
 .mailPerf-container .group{
-	width: 600px;
-	float: none !important;
-	margin-bottom: 10px;
-	margin-top: 10px;
+    width: 440px;
+    float: none !important;
+    margin-bottom: 10px;
+    margin-top: 10px;
 }
 
 .mailPerf-container .help-block{
-	margin-top:0px;
-	font-style: italic;
-	margin-left: 15px;	
-	margin-bottom : 0px;
+    margin-top:0px;
+    font-style: italic;
+    margin-left: 15px;  
+    margin-bottom : 0px;
 }
 
 .mailPerf-container .group .input-group-addon{
-	width: 250px;
+    width: 250px;
 }
 
 .mailPerf-container .input-group-small {
@@ -122,22 +122,35 @@
 
 /* event fields */
 .eventfields{
-	padding-top : 1px;
-	padding-bottom : 1px;
-	padding-left: 20px;
-	margin-bottom : 20px;
+    padding-top : 1px;
+    padding-bottom : 1px;
+    padding-left: 20px;
+    margin-bottom : 20px;
 }
 
 .eventfields .group{
-	margin-top : 15px;
+    margin-top : 15px;
 }
 .eventfields .group .input-group-addon{
-	width:120px;
-	
+    width:120px;
+    
 }
 .eventfields .group{
-	width : 400px;
+    width : 420px;
 }
 #autoSyncToHide #showOnAddSegment{
     display:none;
 }
+
+.eventtitle {
+    margin-left: 30px;
+}
+
+.decal-left {
+    margin-left: 30px;
+}
+
+.col-seg-form {
+    width: 420px;
+}
+

@@ -57,6 +57,7 @@ class FieldsConnector extends APIConnector
 		}
 
 		$this->list_fields = array(); // clear the tab
+
 		foreach ($this->last_result as $record)
 			$this->list_fields[] = new Field($record);
 

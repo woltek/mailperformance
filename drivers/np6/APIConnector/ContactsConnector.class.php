@@ -19,10 +19,12 @@
  */
 
 require_once (dirname(__FILE__).DIRECTORY_SEPARATOR.'APIConnectorIncludes.php');
-require_once (dirname(__FILE__).DIRECTORY_SEPARATOR.'models/Target.class.php');
+require_once (dirname(__FILE__).DIRECTORY_SEPARATOR.'models/Contact.class.php');
 
-class TargetsConnector extends APIConnector
+
+class ContactsConnector extends APIConnector
 {
+	private $list_contacts;
 
 	public function __construct()
 	{
@@ -31,17 +33,44 @@ class TargetsConnector extends APIConnector
 			call_user_func_array('parent::__construct', func_get_args());
 
 			// def prop
-			$this->path = '/targets';
+			$this->path = '/contacts';
+			$this->list_contacts = array ();
 		}
 	}
 
 	/**
-	 * return a target by an Id
+	 * get all contact
 	 *
-	 * @param target $id
-	 * @return Target
+	 * @return array of contact
 	 */
-	public function getTargetById($id)
+	public function getContacts()
+	{
+		list($this->last_result, $this->last_error) = $this->rest_client->get($this->path);
+
+		$this->erreur = $this->getError($this->last_result, $this->last_error);
+		if (isset($this->erreur))
+			return null;
+
+		if (isset($this->last_result[0]) && !ContactMP::isJsonValid($this->last_result[0]))
+		{
+			$this->erreur = $this->jsonErrorMessage();
+			return null;
+		}
+
+		$this->list_contacts = array ();
+		foreach ($this->last_result as $contact)
+			$this->list_contacts[] = new ContactMP($contact);
+
+		return $this->list_contacts;
+	}
+
+	/**
+	 * Get contact by Id
+	 *
+	 * @param string $id
+	 * @return ContactDetails
+	 */
+	public function getContactById($id)
 	{
 		list($this->last_result, $this->last_error) = $this->rest_client->get($this->path.'/'.$id);
 
@@ -49,44 +78,21 @@ class TargetsConnector extends APIConnector
 		if (isset($this->erreur))
 			return null;
 
-		if (!Target::isJsonValid($this->last_result))
+		if (!ContactMP::isJsonValid($this->last_result))
 		{
 			$this->erreur = $this->jsonErrorMessage();
 			return null;
 		}
-
-		return new Target($this->last_result);
+		return new ContactMP($this->last_result);
 	}
 
 	/**
-	 * create a new target
+	 * delete contact by id
 	 *
-	 * @param array $values for each field of the new target
-	 * @return Target
+	 * @param string $id
+	 * @return bool
 	 */
-	public function createTarget(array $values)
-	{
-		list($this->last_result, $this->last_error) = $this->rest_client->post($this->path, $values);
-
-		$this->erreur = $this->getError($this->last_result, $this->last_error);
-		if (isset($this->erreur))
-			return null;
-
-		if (!Target::isJsonValid($this->last_result))
-		{
-			$this->erreur = $this->jsonErrorMessage();
-			return null;
-		}
-
-		return new Target($this->last_result);
-	}
-
-	/**
-	 * delete a target by its Id
-	 *
-	 * @param mixed $id
-	 */
-	public function deleteTargetById($id)
+	public function deleteContactById($id)
 	{
 		list($this->last_result, $this->last_error) = $this->rest_client->delete($this->path.'/'.$id);
 
@@ -94,38 +100,40 @@ class TargetsConnector extends APIConnector
 		if (isset($this->erreur))
 			return false;
 
-		return true;
+		// if success
+		if (isset($this->last_result['success']) && $this->last_result['success'])
+			return true;
+
+		return false;
 	}
 
 	/**
-	 * update a target
-	 * @param Target target target with modified values
+	 * edit detail contact
+	 *
+	 * @param ContactDetails $contact
+	 * @return mixed
 	 */
-	public function updateTarget(Target $target)
+	public function editContact(ContactMP $contact)
 	{
-		return $this->updateTargetFromValues($target->id, $target->getFieldsArray());
-	}
-
-	/**
-	 * update a target by his values
-	 * @param $id The target's id
-	 * @param array $values
-	 * @return null|Target
-	 */
-	public function updateTargetFromValues($id, array $values)
-	{
-		list($this->last_result, $this->last_error) = $this->rest_client->put($this->path.'/'.$id, $values);
+		$modtab = array (
+				'id' => $contact->id,
+				'firstName' => $contact->last_name,
+				'lastName' => $contact->last_name,
+				'email' => $contact->email,
+				'politness' => $contact->politness
+		);
+		list($this->last_result, $this->last_error) = $this->rest_client->put($this->path.'/'.$contact->id, $modtab);
 
 		$this->erreur = $this->getError($this->last_result, $this->last_error);
 		if (isset($this->erreur))
 			return null;
 
-		if (!Target::isJsonValid($this->last_result))
+		if (!ContactMP::isJsonValid($this->last_result))
 		{
 			$this->erreur = $this->jsonErrorMessage();
 			return null;
 		}
-
-		return new Target($this->last_result);
+		return new ContactMP($this->last_result);
 	}
+
 }

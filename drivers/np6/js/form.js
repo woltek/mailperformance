@@ -18,10 +18,11 @@
  */
 
 var moduleUrl = '../modules/np6/Ajax.php';
-var arrayOfValueList = [ "7", "8", "9" ];
+var arrayOfValueList = [ "singleSelectList", "multipleSelectList", "singleSelectList" ];
 var allowSubmitAuth = false;
+
 function checkboxShowForm() {
-	if ($("#showFormCheckBox").attr('checked')) {
+	if ($("#showFormCheckBox").is(":checked")) {
 		$("#frameHauteurPixel").show(0);
 		$("#textBouton").hide(0);
 	} else {
@@ -32,7 +33,7 @@ function checkboxShowForm() {
 
 function checkboxShowSync() {
 	if ($("#autoSyncCheckBox").attr('checked')) {
-		$("#autoSyncToHide").fadeIn(600);
+		$("#autoSyncToHide").show(600);
 	} else {
 		$("#autoSyncToHide").hide(400);
 	}
@@ -61,16 +62,13 @@ function getValueListFromFieldId(id, divId, first) {
 		}
 
 		$("#link" + divId + " select").html(optionsStr);
-		if (first) // si c'est la premiere execution
+		if (first) // si c'est la premiere execution	
 		{
 			$("#link" + divId + " select")
 					.each(
-							function() {
-								var selectedValue = $(this).attr(
-										"data-selectedoption");
-								$(this).children(
-										"select option[value='" + selectedValue
-												+ "']").attr("selected", "");
+							function() {							
+								var selectedValue = $(this).attr("data-selectedoption");
+								$(this).children( "select option[value='" + selectedValue+ "']").attr("selected", "");
 							});
 		}
 
@@ -131,57 +129,37 @@ function checkSelectValueListSelection(obj, first) {
 	// affiche la liste
 	if ($.inArray($("#" + obj.id + " option:selected").attr("data-apitype"),
 			arrayOfValueList) >= 0) {
-		$("#link" + obj.id).fadeIn(400);
+		$("#link" + obj.id).show(400);
 		getValueListFromFieldId(obj.value, obj.id, first);
 	}
 	// type date == 6
-	else if ($("#" + obj.id + " option:selected").attr("data-apitype") == 6) {
-		$("#dateFormat" + obj.id).fadeIn(400);
+	else if ($("#" + obj.id + " option:selected").attr("data-apitype") == 'date') {
+		$("#dateFormat" + obj.id).show(400);
 	} else {
 		$("#link" + obj.id).hide(100);
 		$("#dateFormat" + obj.id).hide(100);
 	}
 }
 
+
+//reset all selected position
 function resetFormsPositions()
 {
-	$("#positionsHooks").val([]);
+	document.getElementById("positionsHooks").selectedIndex = -1;
+
 }
 
-$().ready(
-	function() {
-		checkboxShowForm();
-		checkboxShowSync();
-		$(".fields").each(function() {
-			// selection des champs actuellement lier
-			checkSelectValueListSelection(this, true);
-		});
-		$("#autoSyncCheckBox").change(function() {
-			checkboxShowSync();
-		});
-		$("#showFormCheckBox").change(function() {
-			checkboxShowForm();
-		});
-		$("#resetHooks").click(function() {
-			resetFormsPositions();
-		});
-		$(".fields").change(function() {
-			checkSelectValueListSelection(this, false);
-		});
-		$("#form-auth-np6").submit(function()
-			{
-				if(!allowSubmitAuth)checkAPIkey();
-				return allowSubmitAuth;
-			});
-		$("#addSegmentBouton")
-				.click(
-						function() {
 
-							$("#showOnAddSegment").fadeIn(600);
-							$("#showOnAddSegment")
-									.append(
-											"<input type=\"hidden\" name=\"isNewSegment\" />");
-							$("#addSegmentBouton").hide(0);
-							$(".hideOnNewSegment").hide(0);
-						});
-	});
+//block new segment hide/show
+function addNewSegment()
+{
+	if(! $("#showOnAddSegment").is(":visible"))
+	{
+		$("#showOnAddSegment").show(400);
+	}
+	else
+	{
+		$("#showOnAddSegment").hide(400);
+	}
+}
+

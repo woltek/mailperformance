@@ -17,13 +17,10 @@
  *  International Registered Trademark & Property of NP6 SAS
  */
 
-var timeoutValue = 100;
+var timeoutValue = 6 ;
 
 function delayAndHide(){
-	//$("#messagebloc").delay(timeoutValue * 1000).hide(500);
+	$("#messagebloc").show(400);
+	$("#messagebloc").delay(timeoutValue *1000).hide(400);
 }
 
-
-$().ready(function(){
-	delayAndHide();
-});

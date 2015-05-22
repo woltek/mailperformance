@@ -216,7 +216,7 @@ class SegmentsConnector extends APIConnector
 	 */
 	public function setTargetInSegment($segment_id, $target_id)
 	{
-		list($this->last_result, $this->last_error) = $this->rest_client->post($this->path.'/'.$segment_id.'/targets/'.$target_id);
+		list($this->last_result, $this->last_error) = $this->rest_client->post($this->path.'/'.$segment_id.'/targets/'.$target_id,null);
 
 		$this->erreur = $this->getError($this->last_result, $this->last_error);
 		if (isset($this->erreur))

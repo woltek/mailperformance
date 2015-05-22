@@ -74,6 +74,7 @@ class FormsConnector extends APIConnector
 	 */
 	public function getListFormByTypes(array $type, $valid_only = true)
 	{
+
 		if (count($this->list_forms) <= 0)
 			if ($this->getForms() == null)
 				return null;

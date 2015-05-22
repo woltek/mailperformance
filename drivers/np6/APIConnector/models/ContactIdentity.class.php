@@ -65,7 +65,7 @@ class ContactIdentity extends EntityAbstract
 	 */
 	protected function parse($record)
 	{
-		$this->politness = $record['politness'];
+		$this->politness = $record['politeness'];
 		$this->first_name = $record['firstName'];
 		$this->last_name = $record['lastName'];
 	}
@@ -80,7 +80,7 @@ class ContactIdentity extends EntityAbstract
 		if (empty($json))
 			return true;
 
-		if (isset($json['politness']) && isset($json['firstName']) && isset($json['lastName']))
+		if (isset($json['politeness']) && isset($json['firstName']) && isset($json['lastName']))
 			return true;
 
 		return false;

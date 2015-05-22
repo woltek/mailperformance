@@ -100,7 +100,9 @@ class Segment extends EntityAbstract
 		$this->type = $values['type'];
 		$this->id = $values['id'];
 		$this->name = $values['name'];
-		$this->description = $values['description'];
+        if(isset($this->description)) {
+            $this->description = $values['description'];
+        }
 		$this->creation_date = $values['creation'];
 		$this->expiration_date = $values['expiration'];
 		$this->for_test = $values['isTest'];

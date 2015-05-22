@@ -18,11 +18,14 @@
  *  International Registered Trademark & Property of NP6 SAS
  */
 
+
 if (!defined('_PS_VERSION_'))
 	exit();
 
 require_once (dirname(__FILE__).DIRECTORY_SEPARATOR.'APIConnector'.DIRECTORY_SEPARATOR.'APIConnectorIncludes.php');
 require_once (dirname(__FILE__).DIRECTORY_SEPARATOR.'PrestashopClasses'.DIRECTORY_SEPARATOR.'PrestashopClassesIncludes.php');
+require_once (dirname(__FILE__).DIRECTORY_SEPARATOR.'np6Utils.php');
+
 
 /**
  * np6 module class
@@ -39,14 +42,15 @@ class Np6 extends Module
 	var $message;
 	var $data;
 	var $smarty_array;
-	private $db_name_target_error;
-	private $db_name_mp_link;
-	private $admin_tpl_path;
-	private $hooks_tpl_path;
-	private $dashboard_tpl_path;
-	private $tab_index_to_open;
-	private $action_hooks;
-	private $abandonned_cart_hooks;
+	protected $db_name_target_error;
+	protected $db_name_mp_link;
+	protected $admin_tpl_path;
+	protected $hooks_tpl_path;
+	protected $dashboard_tpl_path;
+	protected $tab_index_to_open;
+	protected $action_hooks;
+	protected $abandonned_cart_hooks;
+
 
 	public function __construct()
 	{
@@ -116,43 +120,43 @@ class Np6 extends Module
 										'fields' => array(
 												'modifDate' => array(
 														$this->l('cart modification date')
-														, '6')
+														, TypeField::DATE)
 												, 'nbArticle' => array(
 														$this->l('numbers of articles in cart')
-														, '4')
+														, TypeField::NUMERIC)
 												, 'cartPrice' => array(
 													$this->l('cart price')
-													, '5'))),
+													, TypeField::STRING))),
 				'actionValidateOrder' => array('help' =>  $this->l('Called during the order validation process')
 											, 'fields' => array(
 												'modifDate' => array(
 														$this->l('validation date')
-														, '6')
+														, TypeField::DATE)
 												, 'moyenPayement' => array(
 														$this->l('payment method')
-														, '5')
+														, TypeField::STRING)
 												, 'totalPaid' => array(
 														$this->l('total paid')
-														, '5'))),
+														, TypeField::STRING))),
 				'actionPaymentConfirmation' => array('help' =>  $this->l('Called when an order\'s status becomes "Payment accepted"')
 											, 'fields' => array(
 												'payementDate' => array(
 														$this->l('payment date')
-														, '6'))),
+														, TypeField::DATE))),
 				/*'actionOrderStatusPostUpdate' => $this->l('Called when an order\'s status is changed'), */
 				'actionProductCancel' => array('help' =>  $this->l('Called when an item is deleted from an order, right after the deletion')
 										, 'fields' => array(
 												'modifDate' => array(
 														$this->l('cancel date')
-														, '6'))),
+														, TypeField::DATE))),
 				'actionOrderReturn' => array('help' => $this->l('Called when the customer request to send his merchandise back to the store')
 										, 'fields' => array(
 											'modifDate' => array(
 												$this->l('date modif')
-												, '6')
+												,TypeField::DATE)
 											, 'reason' => array(
 												$this->l('reason')
-												, '3')))
+												, TypeField::TEXTAREA)))
 								);
 		$this->abandonned_cart_hooks = array(
 			'lastModifDate' => array('text' => $this->l('Cart last modification date')),
@@ -206,44 +210,16 @@ class Np6 extends Module
 			Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'hook` WHERE name= "actionCustomerUpdate"');
 		}
 
-		return parent::uninstall() && $this->deleteConfigurationFile();
+		return parent::uninstall() && np6Utils::deleteConfigurationFile();
 	}
 
-	/**
-	 * delete all configuration file from
-	 * @return boolean
-	 */
-	private function deleteConfigurationFile()
-	{
-		$result = true;
-		$result = Configuration::deleteByName(Constants::SETTINGS_STR) && $result;
-		$result = Configuration::deleteByName(Constants::FORM_STTGS_PAGE) && $result;
-		$result = Configuration::deleteByName(Constants::IMPORT_STTGS) && $result;
-		$result = Configuration::deleteByName(Constants::FORM_STTGS) && $result;
-		$result = Configuration::deleteByName(Constants::EVENT_STTGS) && $result;
-		$result = Configuration::deleteByName(Constants::EVENT_CART_STTGS) && $result;
-		return $result;
-	}
-
-	/**
-	 * delete all data from the former user
-	 */
-	private function clearAllData()
-	{
-		$this->deleteConfigurationFile();
-		$this->cms_page_list->deleteAllCmsList();
-		$sql = 'DELETE FROM '._DB_PREFIX_.$this->db_name_target_error.' ';
-		Db::getInstance()->Execute($sql);
-		$sql = 'DELETE FROM '._DB_PREFIX_.$this->db_name_mp_link.' ';
-		Db::getInstance()->Execute($sql);
-	}
 
 	/**
 	 * administration page
 	 */
 	public function getContent()
 	{
-		$this->smarty_array = $this->createASmartyArray();
+		$this->smarty_array = np6Utils::createASmartyArray($this->sendThisInformation());
 
 		if (function_exists('curl_version'))
 		{
@@ -251,67 +227,38 @@ class Np6 extends Module
 
 			// connection to the API when we modified the alKey
 			if (Tools::isSubmit('submitMailPerfAuth'))
+			{
 				$this->verifFormSubmit();
+			}
 			elseif (isset($settings['alkey']) && !$this->apiConnexion($settings['alkey']))
+			{
 				// connection fail
 				$this->messageConnexionError();
+			}				
 			else
+			{
 				// conection ok
 				// check if forms are submit
 				$this->verifFormSubmit();
-
-			// get new settings values
-			$settings = unserialize(Configuration::get(Constants::SETTINGS_STR));
-
-			// smarty for values in the view
-			if ($settings)
-				$this->smarty_array['userSettings'] = $settings;
-
+			}
+				
 			if ($this->is_connected) // getting data from the API only when we are connected
 			{
-				$this->smarty_array['isConnected'] = true;
-				$this->data = unserialize(Configuration::get(Constants::FORM_STTGS));
-				if ($this->data)
-					$this->smarty_array['data'] = $this->data;
-
-				$syncparam = unserialize(Configuration::get(Constants::IMPORT_STTGS));
-				if ($syncparam)
-					$this->smarty_array['importSet'] = $syncparam;
-
-				$eventparam = $this->getEventSettings();
-				if ($eventparam)
-					$this->smarty_array['eventSet'] = $eventparam;
-
-				$event_cart_param = unserialize(Configuration::get(Constants::EVENT_CART_STTGS));
-				if ($event_cart_param)
-					$this->smarty_array['eventCart'] = $event_cart_param;
-
-				$this->smarty_array['tabIndex'] = $this->tab_index_to_open;
-				$this->smarty_array['formListType1'] = $this->mperf->forms->getListFormByTypes(array (
-						'1'
-				));
-				$this->smarty_array['formListTypeAll'] = $this->mperf->forms->getListFormByTypes(array (
-						'1',
-						'2',
-						'3',
-						'7'
-				));
-				$this->smarty_array['APIFields'] = $this->mperf->fields->getListFields();
-				$this->smarty_array['userSettings']['contact'] = $this->mperf->contacts->getContactById($this->mperf->user_id);
-
-				$this->smarty_array['listCmsPage'] = $this->cms_page_list->getCmsList();
-				$this->smarty_array['segmentsList'] = $this->mperf->segments->getSegmentByTypes(TypeSegment::STATIC_SEGMENT);
-				$this->checkApiError();
-			}
+				$this->getInformationApi();
+		 	}
 			else
 				$this->messageConnexionError();
 		}
 		else
-			// curl error
-			$this->message = array (
-					'text' => $this->l('Install cURL to use the module.'),
-					'type' => 'warning'
-			);
+		{
+			$this->message = $this->setMessage('Install cURL to use the module.','warning');
+		}
+
+        //need a default value
+        if(!isset($this->smarty_array['formListTypeAll']))
+        {
+            $this->smarty_array['formListTypeAll'] = [];
+        }
 
 		$this->smarty_array['message'] = ($this->message['text']) ? $this->message : false;
 
@@ -322,34 +269,62 @@ class Np6 extends Module
 		return $this->display(__FILE__, 'views/templates/admin/mailPerf.tpl');
 	}
 
-	/**
-	 * Check if API's connector send an error
-	 */
-	private function checkApiError()
+	private function getInformationApi()
 	{
-		if ($this->mperf->forms->erreur != '' || $this->mperf->fields->erreur != ''
-				|| $this->mperf->value_lists->erreur != '' || $this->mperf->contacts->erreur != ''
-				|| $this->mperf->segments->erreur != '')
-		{
-			$this->message = array (
-					'text' => $this->l('API Error!').'<br>'.$this->mperf->segments->erreur
-					.($this->mperf->segments->erreur == '' ? '' : '<-segment<br>').$this->mperf->contacts->erreur
-					.($this->mperf->contacts->erreur == '' ? '' : '<-contact<br>').$this->mperf->value_lists->erreur
-					.($this->mperf->value_lists->erreur == '' ? '' : '<- valueList<br>').$this->mperf->fields->erreur
-					.($this->mperf->fields->erreur == '' ? '' : '<-fields<br>').$this->mperf->forms->erreur
-					.($this->mperf->forms->erreur == '' ? '' : '<-form'),
-					'type' => 'warning'
-			);
-		}
+		// put information from api to smarty_array
+
+		// get new settings values
+		$settings = unserialize(Configuration::get(Constants::SETTINGS_STR));
+		// smarty for values in the view
+		$this->smarty_array = np6Utils::SetSmartArrayFieldValue($this->smarty_array,'userSettings',$settings);
+
+		$this->smarty_array['isConnected'] = true;
+
+        $this->smarty_array['formListTypeAll'] = $this->mperf->forms->getListFormByTypes(array (
+            '1',
+            '2',
+            '3',
+            '7'
+        ));
+
+		$this->data = unserialize(Configuration::get(Constants::FORM_STTGS));
+		$this->smarty_array = np6Utils::SetSmartArrayFieldValue($this->smarty_array,'data',$this->data);
+			
+		$syncparam = unserialize(Configuration::get(Constants::IMPORT_STTGS));
+		$this->smarty_array = np6Utils::SetSmartArrayFieldValue($this->smarty_array,'importSet', $syncparam);
+
+		$eventparam = $this->getEventSettings();
+		$this->smarty_array = np6Utils::SetSmartArrayFieldValue($this->smarty_array,'eventSet', $eventparam);
+	
+		$event_cart_param = unserialize(Configuration::get(Constants::EVENT_CART_STTGS));
+		$this->smarty_array = np6Utils::SetSmartArrayFieldValue($this->smarty_array,'eventCart', $event_cart_param);
+
+		$this->smarty_array['tabIndex'] = $this->tab_index_to_open;
+		$this->smarty_array['formListType1'] = $this->mperf->forms->getListFormByTypes(array (
+				'1'
+		));
+		
+	 	$this->smarty_array['APIFields'] = $this->mperf->fields->getListFields();
+	 	$this->smarty_array['userSettings']['contact'] = $this->mperf->contacts->getContactById($this->mperf->user_id);
+
+	 	$this->smarty_array['listCmsPage'] = $this->cms_page_list->getCmsList();
+	 	$this->smarty_array['segmentsList'] = $this->mperf->segments->getSegmentByTypes(TypeSegment::STATIC_SEGMENT);
+	 	
+	 	$tempErrorMessage = np6Utils::checkApiError($this->sendThisInformation());
+	 	if($tempErrorMessage != null)
+	 	{
+	 		$this->message = $tempErrorMessage;
+	 	}	
 	}
 
+	
 	/**
 	 * connection to the API
 	 *
 	 * @param string $apikey
 	 * @return bool is authenticate
 	 */
-	private function apiConnexion($apikey, $clear_cache = false)
+	public function apiConnexion($apikey, $clear_cache = false)
 	{
 		// authentification
 		$this->mperf->auto_login_key = $apikey;
@@ -366,138 +341,6 @@ class Np6 extends Module
 		return false;
 	}
 
-	/**
-	 * Get an array with infos for the view
-	 *
-	 * @return array of info
-	 */
-	private function createASmartyArray()
-	{
-		$languages = Language::getLanguages(false);
-
-		return array (
-
-				'admin_tpl_path' => $this->admin_tpl_path,
-				'hooks_tpl_path' => $this->hooks_tpl_path,
-				'info' => array (
-						'module' => $this->name,
-						'name' => Configuration::get('PS_SHOP_NAME'),
-						'domain' => Configuration::get('PS_SHOP_DOMAIN'),
-						'email' => Configuration::get('PS_SHOP_EMAIL'),
-						'version' => $this->version,
-						'psVersion' => _PS_VERSION_,
-						'php' => phpversion(),
-						'mysql' => Db::getInstance()->getVersion(),
-						'theme' => _THEME_NAME_,
-						'today' => date('Y-m-d'),
-						'module' => $this->name,
-						'context' => (Configuration::get('PS_MULTISHOP_FEATURE_ACTIVE') == 0) ? 1 :
-						($this->context->shop->getTotalShops() != 1) ? $this->context->shop->getContext() : 1
-				),
-				'form_action' => 'index.php?tab=AdminModules&configure='.$this->name.'&token='
-				.Tools::getAdminTokenLite('AdminModules').'&tab_module='.$this->tab.'&module_name='.$this->name,
-				'hooks' => $this->hooks,
-				'action_hooks' => $this->action_hooks,
-				'cart_hooks' => $this->abandonned_cart_hooks,
-				'isConnected' => $this->is_connected,
-				'DBfield' => $this->getDBfield(),
-				'DateFormat' => array (
-						'JJ/MM/AAAA' => 'd/m/Y',
-						'MM/JJ/AAAA' => 'm/d/Y',
-						'JJ/MM/AA' => 'd/m/y',
-						'YYYY/MM/DD' => 'Y/m/d',
-						'JJ-MM-AAAA' => 'd-m-Y',
-						'JJ-MM-AA' => 'd-m-y',
-						'AAAA-MM-JJ' => 'Y-m-d'
-				),
-				'languages' => $languages,
-				'link' => $this->context->link,
-				'default_lang' => $this->context->language->id,
-				'flags' => array (
-						'title' => $this->displayFlags($languages, $this->context->language->id, 'title¤form', 'title', true),
-						'form' => $this->displayFlags($languages, $this->context->language->id, 'title¤form', 'form', true)
-				)
-		);
-	}
-
-	/**
-	 * Get an array with the database fields
-	 *
-	 * @return array
-	 */
-	private function getDBfield()
-	{
-		return array (
-				array (
-						'dbName' => 'id_customer',
-						'type' => array (
-								TypeField::NUMERIC
-						),
-						'name' => 'id'
-				),
-				array (
-						'dbName' => 'id_gender',
-						'distinctValues' => array (
-								'1' => $this->l('Mr.'),
-								'2' => $this->l('Ms.')
-						),
-						'type' => array (
-								TypeField::RADIOBUTTON,
-								TypeField::CHECKBOX,
-								TypeField::LISTE
-						),
-						'name' => $this->l('Title')
-				),
-				array (
-						'dbName' => 'firstname',
-						'type' => array (
-								TypeField::STRING, TypeField::TEXTAREA
-						),
-						'name' => $this->l('First name')
-				),
-				array (
-						'dbName' => 'lastname',
-						'type' => array (
-								TypeField::STRING, TypeField::TEXTAREA
-						),
-						'name' => $this->l('Last name')
-				),
-				array (
-						'dbName' => 'email',
-						'type' => array (
-								TypeField::EMAIL
-						),
-						'name' => $this->l('E-mail')
-				),
-				array (
-						'dbName' => 'birthday',
-						'type' => array (
-								TypeField::DATE
-						),
-						'name' => $this->l('Birthdate')
-				),
-				array (
-						'dbName' => 'newsletter_date_add',
-						'type' => array (
-								TypeField::DATE
-						),
-						'name' => $this->l('Subscribe to the newsletter date')
-				),
-				array (
-						'dbName' => 'optin',
-						'distinctValues' => array (
-								'0' => $this->l('no'),
-								'1' => $this->l('yes')
-						),
-						'type' => array (
-								TypeField::RADIOBUTTON,
-								TypeField::CHECKBOX,
-								TypeField::LISTE
-						),
-						'name' => $this->l('Third party offers')
-				)
-		);
-	}
 
 	/**
 	 * Save settings into Prestashop Configuration
@@ -508,14 +351,15 @@ class Np6 extends Module
 
 		//check if the customer change
 		if (Tools::isSubmit('clearAllValues') && Tools::getValue('clearAllValues') == 'true')
+		{
 			$this->clearAllData();
-
+		}
+			
 		// Get user key
 		if (!Tools::isSubmit('alkey') || !Tools::getValue('alkey') || trim(Tools::getValue('alkey')) == '')
-			$this->message = array (
-				'text' => $this->l('empty auto login key'),
-				'type' => 'error'
-			);
+		{
+			$this->message = $this->setMessage('empty auto login key','error');
+		}
 
 		// saves the settings if key different than empty
 		if (!empty(Tools::getValue('alkey')) && trim(Tools::getValue('alkey')) != '')
@@ -526,15 +370,30 @@ class Np6 extends Module
 			Configuration::updateValue(Constants::SETTINGS_STR, serialize($settings));
 
 			if (!$this->apiConnexion($settings['alkey'], true))
+			{
 				// if error
 				$this->messageConnexionError();
+			}				
 			else
+			{
 				// Saved message
-				$this->message = array (
-						'text' => $this->l('Saved!'),
-						'type' => 'valid'
-				);
+ 				$this->message = $this->setMessage('Saved!','valid');
+			}
 		}
+	}
+
+	/**
+	 * delete all data from the former user
+	 */
+	private function  clearAllData()
+	{
+		//clear configuration 
+		np6Utils::deleteConfigurationFile();
+		$this->cms_page_list->deleteAllCmsList();
+		$sql = 'DELETE FROM '._DB_PREFIX_.$this->db_name_target_error.' ';
+		Db::getInstance()->Execute($sql);
+		$sql = 'DELETE FROM '._DB_PREFIX_.$this->db_name_mp_link.' ';
+		Db::getInstance()->Execute($sql);
 	}
 
 	/**
@@ -547,18 +406,12 @@ class Np6 extends Module
 		// check form infos
 		if (!Tools::isSubmit('CMStitre0') || empty(Tools::getValue('CMStitre0')))
 		{
-			$this->message = array (
-					'text' => $this->l('Empty title!'),
-					'type' => 'error'
-			);
+			$this->message = $this->setMessage('Empty title!','error');
 			return;
 		}
 		if (!Tools::isSubmit('CMSform0') || empty(Tools::getValue('CMSform0')))
 		{
-			$this->message = array (
-					'text' => $this->l('No form selected!'),
-					'type' => 'error'
-			);
+			$this->message = $this->setMessage('No form selected!','error');
 			return;
 		}
 
@@ -579,10 +432,7 @@ class Np6 extends Module
 		$this->cms_add->addInDB();
 
 		// Saved message
-		$this->message = array (
-				'text' => $this->l('CMS page added!'),
-				'type' => 'valid'
-		);
+		$this->message = $this->setMessage('CMS page added!','valid');
 	}
 
 	/**
@@ -601,28 +451,35 @@ class Np6 extends Module
 				'new' => (Tools::isSubmit('hooks')) ? Tools::getValue('hooks') : false
 		);
 
-		$this->checkSubmitFormPosition($hooks);
+		if(! $this->checkSubmitFormPosition($hooks))
+		{
+			return;
+		}
 
 		// hide everything
 		foreach ($this->hooks as $hook)
 			if ($this->isRegisteredInHook('display'.$hook['hook']))
+			{
 				$this->unregisterHook('display'.$hook['hook']);
-
+			}
+				
 		// show selected hooks
 		if ($hooks['new'])
+		{
 			foreach ($hooks['new'] as $hook)
+			{
 				$this->registerHook('display'.$hook);
-
+			}
+				
+		}
+			
 		// saves the new settings
 		if (Configuration::updateValue(Constants::FORM_STTGS, serialize(array (
 				'data' => $this->data,
 				'hooks' => $hooks['new']
 		))))
 		{
-			$this->message = array (
-					'text' => $this->l('Saved!'),
-					'type' => 'valid'
-			);
+			$this->message = $this->setMessage('Saved!','valid');
 		}
 	}
 
@@ -635,18 +492,18 @@ class Np6 extends Module
 		foreach ($this->action_hooks as $hook => $details)
 			if (!empty($details) && Tools::isSubmit($hook.'choixSegment'))
 			{
+				//fill array to save
 				$array_to_save[$hook]['champs'] = array();
 				$array_to_save[$hook]['segment'] = Tools::getValue($hook.'choixSegment');
 				foreach ($details['fields'] as $name => $tab)
 					if (isset($tab) && Tools::isSubmit($hook.'champs'.$name))
+					{
 						$array_to_save[$hook]['champs'][$name] = Tools::getValue($hook.'champs'.$name);
+					}
 			}
 		Configuration::updateValue(Constants::EVENT_STTGS, serialize($array_to_save));
 		// Saved message
-		$this->message = array (
-			'text' => $this->l('Saved!'),
-			'type' => 'valid'
-		);
+		$this->message = $this->setMessage('Saved!','valid');
 	}
 
 	/**
@@ -655,39 +512,34 @@ class Np6 extends Module
 	private function configureCartEvents()
 	{
 		// Saved message
-		$this->message = array (
-			'text' => $this->l('Saved!'),
-			'type' => 'valid'
-		);
+		$this->message = $this->setMessage('Saved!','valid');
 		$array_to_save = array();
 
-		if (Tools::isSubmit('activateCart') && Tools::getValue('activateCart'))
+		if (Tools::isSubmit('submitMailPerfCartEvent'))
 		{
 			$array_to_save['isValidate'] = Tools::getValue('activateCart');
 			//for each fields needed
+
 			foreach ($this->abandonned_cart_hooks as $name => $details)
 				if (!empty($details) && Tools::isSubmit('cart'.$name))
 				{
 					if (!in_array(Tools::getValue('cart'.$name), $array_to_save)) //check if the field is not bind already
+					{
 						$array_to_save[$name] = Tools::getValue('cart'.$name);
+					}	
 					else
 					{
-						$this->message = array (
-							'text' => $this->l('you can\'t select twice the same field.'),
-							'type' => 'error'
-						);
+						$this->message = $this->setMessage('you can\'t select twice the same field.','error');
 						return;//exit on error
 					}
 				}
 				else
-				{
-					$this->message = array (
-						'text' => $details['text'].$this->l(' is empty!'),
-						'type' => 'error'
-					);
+                {
+					$this->message = $this->setMessage(' is empty!','error',1,$details);
 					return; //exit on error
 				}
 		}
+
 		Configuration::updateValue(Constants::EVENT_CART_STTGS, serialize($array_to_save));
 	}
 
@@ -696,21 +548,22 @@ class Np6 extends Module
 	 */
 	private function configureFormImport()
 	{
-		$this->message = array (
-				'text' => $this->l('Saved!'),
-				'type' => 'valid'
-		);
+		$this->message = $this->setMessage('Saved!','valid');
 
 		$fields = $this->mperf->fields->getListFields();
 		$oblig_fields = array();
 		foreach ($fields as $f)
+		{
 			if ($f->is_obligatory || $f->is_unicity)
+			{
 				$oblig_fields[$f->id] = $f;
+			}
+		}
 
 		$field_name = 'dbSelect';
 		$fiellink_name = $field_name.'Link';
 
-		$dbfields = $this->getDBfield();
+		$dbfields = $this->sendThisInformation()['DBfield'];
 		$import_bind = array ();
 		$import_bind['fields'] = array ();
 		$import_bind['isAutoSync'] = Tools::getValue('isAutoSync') == 'on';
@@ -718,40 +571,19 @@ class Np6 extends Module
 		$import_bind['inSegmentId'] = Tools::getValue('choixSegment');
 
 		if (($new_segment_id = $this->checkNewSegment()) != -1)
+		{
 			$import_bind['inSegmentId'] = $new_segment_id;
-
+		}
+		
 		// get all fields and saves bindings
 		foreach ($dbfields as $dbfield)
 		{
-			if (Tools::isSubmit($field_name.$dbfield['dbName']))
-			{
-				$api_id = Tools::getValue($field_name.$dbfield['dbName']);
-
-				$import_bind['fields'][$dbfield['dbName']] = array (
-						'apiFieldId' => $api_id
-				);
-
-				if ($api_id != 0 && isset($dbfield['distinctValues']))
-				{
-					$import_bind['fields'][$dbfield['dbName']]['binding'] = array ();
-					// bindings for value list
-					foreach ($dbfield['distinctValues'] as $localvalue => $value)
-						if ($value != null)
-							$import_bind['fields'][$dbfield['dbName']]['binding'][$localvalue] = Tools::getValue($fiellink_name.$dbfield['dbName'].$localvalue);
-				}
-				if (isset($oblig_fields[$api_id]))
-					unset($oblig_fields[$api_id]);
-				if (Tools::isSubmit('dateFormat'.$dbfield['dbName']))
-					$import_bind['fields'][$dbfield['dbName']]['dateFormat'] = Tools::getValue('dateFormat'.$dbfield['dbName']);
-			}
+			np6Utils::bindField($field_name, $fiellink_name , $dbfield, $import_bind, $oblig_fields);
 		}
 
 		if (count($oblig_fields) > 0)
 		{
-			$this->message = array (
-				'text' => $this->l('All unicity or obligatory fields are not bind.'),
-				'type' => 'warning'
-			);
+			$this->message = $this->setMessage('All unicity or obligatory fields are not bind.','warning');
 		}
 
 		// saves settings
@@ -766,12 +598,9 @@ class Np6 extends Module
 	private function checkNewSegment()
 	{
 		// if we click on the add segment button
-		if (Tools::isSubmit('isNewSegment'))
+		if (Tools::isSubmit('submitMailPerfFormImportAddSegment'))
 		{
-			$this->message = array (
-					'text' => $this->l('New segment added!'),
-					'type' => 'valid'
-			);
+			$this->message = $this->setMessage('New segment added!','valid');
 
 			if (Tools::isSubmit('newSegmentName') && Tools::isSubmit('newSegmentDesc')
 					&& Tools::isSubmit('newSegmentDate') && !empty(Tools::getValue('newSegmentName'))
@@ -791,24 +620,21 @@ class Np6 extends Module
 
 					// check the success
 					if ($result_segment != null)
+					{
 						return $result_segment->id;
-
-					$this->message = array (
-							'text' => $this->l('Failed to save the segment!').'<br>'.print_r($this->mperf->segments->erreur),
-							'type' => 'warning'
-					);
+					}
+						
+					$this->message = $this->setMessage('Failed to save the segment!','warning',2);
 				}
 				else
-					$this->message = array (
-							'text' => $this->l('Date format is not valid!'),
-							'type' => 'error'
-					);
+				{
+					$this->message = $this->setMessage('Date format is not valid!','error');
+				}
 			}
 			else
-				$this->message = array (
-						'text' => $this->l('All fields are required!'),
-						'type' => 'error'
-				);
+			{
+				$this->message = $this->setMessage('All fields are required!','error');
+			}
 		}
 		return -1;
 	}
@@ -820,32 +646,26 @@ class Np6 extends Module
 	 */
 	private function checkSubmitFormPosition($hooks)
 	{
-		$this->message = array (
-				'text' => $this->l('Saved!'),
-				'type' => 'valid'
-		); // if no error
+		$this->message = $this->setMessage('Saved!','valid'); // if no error
 
 		// if nothing is selected
+		/*
 		if (!$hooks['new'])
 		{
-			$this->message = array (
-					'text' => $this->l('Select a form.'),
-					'type' => 'error'
-			);
+			$this->message = $this->setMessage('Select a form position','error'); 
 			return false;
 		}
+		*/
 
 		// if a form is selected
 		if (Tools::isSubmit('formSelection') && !empty(Tools::getValue('formSelection')))
-
+		{
 			$this->data['idForm'] = Tools::getValue('formSelection');
+		}			
 		else
 		{
 			$this->data['idForm'] = false;
-			$this->message = array (
-					'text' => $this->l('Select a form.'),
-					'type' => 'error'
-			);
+			$this->message = $this->setMessage('Select a form.','error'); 
 			return false;
 		}
 
@@ -853,31 +673,36 @@ class Np6 extends Module
 		$detail_from = $this->mperf->forms->getDetailFormById($this->data['idForm']);
 
 		if ($detail_from != null)
+		{
 			$this->data['formLink'] = $detail_from->preview_location;
+		}
 		else
-			$this->message = array (
-					'text' => $this->l('API Error .'),
-					'type' => 'error'
-			);
+		{
+			$this->message = $this->setMessage('API Error .','error'); 
+		}
+			
 
 		// if the height is not null
 		if (Tools::isSubmit('hauteurFrame'))
+		{
 			$this->data['hauteur'] = Tools::getValue('hauteurFrame') > 1 ? Tools::getValue('hauteurFrame') : 'auto';
+		}	
 		else
+		{
 			$this->data['hauteur'] = 'auto';
-
+		}
+			
 		// show form or button
 		$this->data['showForm'] = Tools::isSubmit('showForm') ? (Tools::getValue('showForm') == 'on') : false;
 
 		// if the text of the button is not empty
 		if (Tools::isSubmit('textBouton'))
+		{
 			$this->data['textBouton'] = htmlspecialchars(Tools::getValue('textBouton'));
+		}			
 		elseif (!$this->data['showForm'])
 		{
-			$this->message = array (
-					'text' => $this->l('Your button has no text.'),
-					'type' => 'warning'
-			);
+			$this->message = $this->setMessage('Your button has no text.','warning');
 			$this->data['textBouton'] = $this->l('Newsletter');
 		}
 		else
@@ -904,16 +729,16 @@ class Np6 extends Module
 			$this->configureFormPosition();
 			$this->tab_index_to_open = 2;
 		}
-		elseif (Tools::isSubmit('submitMailPerfFormImport'))
-		{
-			$this->configureFormImport();
-			$this->tab_index_to_open = 1;
-		}
 		elseif (Tools::isSubmit('submitMailPerfFormImportAddSegment'))
 		{
 			$this->configureFormImport();
 			$this->tab_index_to_open = 1;
 		}
+		elseif (Tools::isSubmit('submitMailPerfFormImport'))
+		{
+			$this->configureFormImport();
+			$this->tab_index_to_open = 1;
+		}	
 		elseif (Tools::isSubmit('submitMailPerfFormPage'))
 		{
 			$this->configureFormPage();
@@ -952,6 +777,9 @@ class Np6 extends Module
 		// JS
 		$this->context->controller->addJS($this->_path.'js/message.js');
 		$this->context->controller->addJS($this->_path.'js/form.js');
+		$this->context->controller->addJS("//code.jquery.com/jquery-1.10.2.js");
+		$this->context->controller->addJS("//code.jquery.com/ui/1.11.4/jquery-ui.js");
+		$this->context->controller->addJS($this->_path.'js/jquerydepend.js');
 	}
 
 	/**
@@ -992,7 +820,6 @@ class Np6 extends Module
 
 			$this->smarty->assign('mPerfForm', $smarty);
 			return $this->display(__FILE__, 'views/templates/hook/home.tpl');
-
 	}
 
 	/**
@@ -1105,27 +932,7 @@ class Np6 extends Module
 
 		if (!$id_mp)
 		{
-			// create target
-			$target_result = $this->mperf->targets->createTarget($send_array);
-			if($target_result)
-			{
-				$id_mp = $target_result->id;
-
-				Db::getInstance()->insert($this->db_name_mp_link, array(
-				'idMP' => $target_result->id,
-				'idPresta' => $customer->id));
-
-			}
-			else // if error, save and quit
-			{
-				Db::getInstance()->insert($this->db_name_target_error, array (
-						'customer_Id' => $customer->id,
-						'errorText' => str_replace('\\', '\\\\', __FILE__).':'.__METHOD__.':'.__LINE__.' '.$this->mperf->targets->erreur,
-						'errorTimestamp' => time()
-					));
-
-				return;
-			}
+			$this->CreateLinkPrestashopMailForce($send_array, $customer, $id_mp);
 		}
 
 		$import_bind = unserialize(Configuration::get(Constants::IMPORT_STTGS));
@@ -1177,24 +984,38 @@ class Np6 extends Module
 	 */
 	private function getCustomerBindArray($new_customer)
 	{
+
 		$import_bind = unserialize(Configuration::get(Constants::IMPORT_STTGS));
 
+
+		//use to know if we are in user creation;
+		$dateInscription = (new DateTime($new_customer->date_add))->getTimestamp();
+		$dateNow = (new DateTime())->getTimestamp();
+		$isUserCreation =  (10 > ($dateNow - $dateInscription)) ;
+
 		// if automatic synronisation between Presta and MailPerf is not active, do nothing
-		if(!$import_bind['isAutoSync'])
-		    return;
+		if(!$import_bind['isAutoSync'] && $isUserCreation)
+		{
+			return null;
+		}
 
 		// if the customer has not subscribed to the newsletter and we have not chosen to import non-subscribers, return
-		if(!$new_customer->newsletter && !$import_bind['isAddNoNews'])
-		    return;
+		if(!$new_customer->newsletter && !$import_bind['isAddNoNews'] && $isUserCreation)
+		{
+		    return null;
+		}
 
-		$send_array = array ();
+		$send_array = array();
 
 		// get all fields
 		$fields = $this->mperf->fields->getIndexedFields();
 
+
 		// initalize all fields to insert to null
 		foreach ($fields as $field_id => $field)
-			$send_array[$field_id] = $field->getNullValue();
+		{
+			$send_array[$field_id] = $field->getnullValue();
+		}
 
 		// add a 0 if null
 		if ($new_customer->optin == null || empty($new_customer->optin))
@@ -1219,12 +1040,22 @@ class Np6 extends Module
 							$send_array[$import_bind['fields'][$key]['apiFieldId']][] = $import_bind['fields'][$key]['binding'][$new_user_value];
 						break;
 					case TypeField::RADIOBUTTON :
+						if (isset($import_bind['fields'][$key]['binding']) && isset($import_bind['fields'][$key]['binding'][$new_user_value]) && $import_bind['fields'][$key]['binding'][$new_user_value] >= 0)
+							$send_array[$import_bind['fields'][$key]['apiFieldId']] = $import_bind['fields'][$key]['binding'][$new_user_value];
+				    	break;
 					case TypeField::LISTE :
 						if (isset($import_bind['fields'][$key]['binding']) && isset($import_bind['fields'][$key]['binding'][$new_user_value]) && $import_bind['fields'][$key]['binding'][$new_user_value] >= 0)
 							$send_array[$import_bind['fields'][$key]['apiFieldId']] = $import_bind['fields'][$key]['binding'][$new_user_value];
 				    	break;
 					case TypeField::DATE :
-						$send_array[$import_bind['fields'][$key]['apiFieldId']] = Field::getFormatDate(strtotime($new_user_value));
+						if($new_user_value == null)
+						{
+							$send_array[$import_bind['fields'][$key]['apiFieldId']] = null;
+						}
+						else
+						{
+							$send_array[$import_bind['fields'][$key]['apiFieldId']] = Field::getFormatDate(strtotime($new_user_value));
+						}
 						break;
 					case TypeField::NUMERIC :
 					    $send_array[$import_bind['fields'][$key]['apiFieldId']] = intval($new_user_value);
@@ -1240,8 +1071,8 @@ class Np6 extends Module
 				}
 			}
 		}
-
-		return $send_array;
+    	
+    	return $send_array;
 
 	}
 
@@ -1268,11 +1099,10 @@ class Np6 extends Module
 	    // this is account creation, don't
 	    // if(Tools::getValue('create_account'))
 
-
 		$event_settings = $this->getEventSettings();
 		$target = null;
 		if ($cart != null)
-		{
+		{		
 			//creation of the target
 			$target = new Target();
 			$target->values = array();
@@ -1288,7 +1118,6 @@ class Np6 extends Module
 				if ($this->checkInEventSettings($event_settings, 'actionCartSave', 'modifDate'))
 					$target->values[$event_settings['actionCartSave']['champs']['modifDate']] = Field::getFormatDate(time());
 			}
-
 			//abandonned cart
 			$event_cart_param = unserialize(Configuration::get(Constants::EVENT_CART_STTGS));
 			if ($event_cart_param && isset($event_cart_param['isValidate']) && $event_cart_param['isValidate'])
@@ -1298,7 +1127,6 @@ class Np6 extends Module
 				// confirmation date to null
 				$target->values[$event_cart_param['confirmationDate']] = null;
 			}
-
 		}
 
 		$this->eventHookSegmentChange($this->context->customer, 'actionCartSave', $target);
@@ -1423,41 +1251,37 @@ class Np6 extends Module
 	 * @param Target $upload_target = null Target to update
 	 */
 	public function eventHookSegmentChange($customer, $hook, Target $upload_target = null)
-	{
+ 	{
 		$id_mp = null;
 		$sql = 'SELECT * FROM '._DB_PREFIX_.$this->db_name_mp_link.' WHERE idPresta="'.$customer->id.'" LIMIT 1';
+
 		if ($results = Db::getInstance()->ExecuteS($sql))
+		{
 			foreach ($results as $row)
+			{
 				$id_mp = $row['idMP'];
+			}
+		}
 
 		if ($id_mp == null || empty($id_mp))// saves target in mailPerformance if not exist
 		{
+
 			$send_array = $this->getCustomerBindArray($customer);
-			$target_result = $this->mperf->targets->createTarget($send_array);
 
-			if ($target_result != null)
+			//if we are in user creation && Synch presta/mailforce or no newsletter selected , return
+			if($send_array ==  null)
 			{
-				$id_mp = $target_result->id;
-				Db::getInstance()->insert($this->db_name_mp_link, array(
-					'idMP' => $target_result->id,
-					'idPresta' => $customer->id));
-			}
-			else
-			{
-				Db::getInstance()->insert($this->db_name_target_error, array (
-						'customer_Id' => $customer->id,
-						'errorText' => str_replace('\\', '\\\\', __FILE__).':'.__METHOD__.':'.__LINE__.' '.$this->mperf->targets->erreur,
-						'errorTimestamp' => time()));
-
-				// lets stop here as we don't have a target to put into a segment
 				return;
 			}
+
+			$this->CreateLinkPrestashopMailForce($send_array, $customer, $id_mp);
 		}
 
 		if ($id_mp != null && !empty($id_mp))
 		{
 			//save in the new segment
 			$eventparam = $this->getEventSettings();
+
 			if ($eventparam && isset($eventparam[$hook]) && $eventparam[$hook]['segment'] != -1)
 			{
 				$segment_result = $this->mperf->segments->setTargetInSegment($eventparam[$hook]['segment'], $id_mp);
@@ -1475,9 +1299,8 @@ class Np6 extends Module
 			//update target values
 			if ($upload_target != null)
 			{
-				$upload_target->id = $id_mp;
+				$upload_target->id = $id_mp;;
 				$target_result = $this->mperf->targets->updateTarget($upload_target);
-
 				if(!$target_result)
 				{
 					Db::getInstance()->insert($this->db_name_target_error, array (
@@ -1523,4 +1346,102 @@ class Np6 extends Module
 		return isset($event_settings[$hook]['champs'][$field])
 				&& $event_settings[$hook]['champs'][$field] > 0;
 	}
+
+	public function setMessage($text, $type ,$specialCase = 0,$details ="")
+	{
+		if($specialCase == 0) //default setMessage
+		{
+			return array (
+				'text' => $this->l($text),
+				'type' => $type
+			);
+		}
+		else if($specialCase == 1) // use specifically
+		{
+			return array (
+						'text' => $details['text'].$this->l($text),
+						'type' => $type
+					);
+		}
+		else if($specialCase == 2) // use specifically
+		{
+			return array (
+						'text' => $this->l($text).'<br>'.print_r($this->mperf->segments->erreur),
+						'type' => $type
+					);
+		}
+	}
+
+	private function sendThisInformation()
+	{
+		$languages = Language::getLanguages(false);
+
+		// new array , contain $this needed information
+		$array_temp = array(
+			'admin_tpl_path' =>  $this->admin_tpl_path,
+			'hooks_tpl_path' =>  $this->hooks_tpl_path,
+			'module' =>  $this->name,
+			'admin_tpl_path' =>  $this->admin_tpl_path,
+			'admin_tpl_path' =>  $this->admin_tpl_path,
+			'version' => $this->version,
+			'context' => $this->context,
+			'tab' => $this->tab,
+			'hooks' => $this->hooks,
+			'action_hooks' => $this->action_hooks,
+			'cart_hooks' => $this->abandonned_cart_hooks,
+			'isConnected' => $this->is_connected,
+			'DBfield' => null ,
+			'flags' => array (
+						'title' => $this->displayFlags($languages, $this->context->language->id, 'title¤form', 'title', true),
+						'form' => $this->displayFlags($languages, $this->context->language->id, 'title¤form', 'form', true)
+				),
+			'mperf' => $this->mperf,
+			'apiError' => $this->l('API Error!'),
+			'Mr.' => $this->l('Mr.'),
+			'Ms.' => $this->l('Ms.'),
+			'Title' => $this->l('Title'),
+			'First name' => $this->l('First name'),
+			'Last name' => $this->l('Last name'),
+			'E-mail' => $this->l('E-mail'),
+			'Birthdate' => $this->l('Birthdate'),
+			'no' => $this->l('no'),
+			'yes' => $this->l('yes'),
+			'Subscribe to the newsletter date' => $this->l('Subscribe to the newsletter date'),
+			'Third party offers' => $this->l('Third party offers'),
+			'cms_page_list' => $this->cms_page_list,
+			);
+	
+		//set DBfield 
+		$array_temp['DBfield'] = np6Utils::getDBfield($array_temp);
+
+		return $array_temp;
+
+	}
+
+	// create the row for link Prestashop client to mailforce target
+	public function CreateLinkPrestashopMailForce($send_array, $customer, & $id_mp)
+	{
+			$target_result = $this->mperf->targets->createTarget($send_array);
+
+			if($target_result)
+			{
+				$id_mp = $target_result->id;
+
+				Db::getInstance()->insert($this->db_name_mp_link, array(
+				'idMP' => $target_result->id,
+				'idPresta' => $customer->id));
+
+			}
+			else // if error, save and quit
+			{
+				Db::getInstance()->insert($this->db_name_target_error, array (
+						'customer_Id' => $customer->id,
+						'errorText' => str_replace('\\', '\\\\', __FILE__).':'.__METHOD__.':'.__LINE__.' '.$this->mperf->targets->erreur,
+						'errorTimestamp' => time()
+					));
+
+				return ;
+			}
+	}
+
 }
